@@ -1,6 +1,8 @@
-# @package terminal_bench_config
+# @package _group_
 
-trials_dir: "~/trials"
-sandboxes_dir: "sandboxes" 
-agent_name: "terminus"
-max_episodes: 16 
+trials_dir: "trials"
+agent_name: "terminus-2" # "terminus-2", "oracle"
+sandboxes_dir: "/app/sandboxes"
+max_episodes: 25
+tasks_dataset_path: "/app/sandboxes/converted_tasks"
+environment_type: "docker" # "docker", "e2b", "modal", "daytona" 

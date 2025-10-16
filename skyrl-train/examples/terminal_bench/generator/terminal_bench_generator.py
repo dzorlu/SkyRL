@@ -8,9 +8,11 @@ from skyrl_train.inference_engines.inference_engine_client import InferenceEngin
 from skyrl_train.inference_engines.base import ConversationType
 from omegaconf import DictConfig
 from pathlib import Path
-from sandbox.models.trial.config import TrialConfig, AgentConfig, LocalTaskConfig
+import random
+from sandbox.models.trial.config import TrialConfig, AgentConfig, TaskConfig, EnvironmentConfig
 from sandbox.models.task.id import LocalTaskId
 from sandbox.models.agent.name import AgentName
+from sandbox.models.environment_type import EnvironmentType
 from sandbox.trial.trial import Trial
 
 
@@ -49,18 +51,28 @@ class TerminalBenchGenerator(GeneratorInterface):
         self.agent_name = terminal_bench_cfg.agent_name
         self.sandboxes_dir = terminal_bench_cfg.sandboxes_dir
         self.max_episodes = terminal_bench_cfg.max_episodes
+        self.environment_type = EnvironmentType(terminal_bench_cfg.environment_type)
+
+        # Discover all tasks in the dataset directory
+        self.tasks_dataset_path = Path(terminal_bench_cfg.tasks_dataset_path)
+        if not self.tasks_dataset_path.is_dir():
+            raise ValueError(f"Tasks dataset path {self.tasks_dataset_path} not found.")
+        self.all_task_paths = [p for p in self.tasks_dataset_path.iterdir() if p.is_dir()]
+        if not self.all_task_paths:
+            raise ValueError(f"No tasks found in {self.tasks_dataset_path}.")
 
         if self.generator_cfg.chat_template.name_or_path is not None:
             raise NotImplementedError("TerminalBenchGenerator doesn't support custom chat template")
 
     async def generate(self, input_batch: GeneratorInput) -> GeneratorOutput:
-        # TODO(tgriggs): Plumb the sandboxes task list here instead of using (and ignoring) empty prompts
         prompts = input_batch["prompts"]
         tasks = []
         for _ in range(len(prompts)):
+            # Randomly sample a task for this batch item
+            task_path = random.choice(self.all_task_paths)
             tasks.append(
                 self.terminal_bench_agent_loop(
-                    prompt="",
+                    task_path=task_path,
                 )
             )
 
@@ -84,7 +96,7 @@ class TerminalBenchGenerator(GeneratorInterface):
 
     async def terminal_bench_agent_loop(
         self,
-        prompt: ConversationType,
+        task_path: Path,
     ) -> TerminalBenchAgentOutput:
         """
         Run a single terminal_bench agent.
@@ -93,32 +105,33 @@ class TerminalBenchGenerator(GeneratorInterface):
         # All LLM requests in this trial will share the same session_id
         session_id = uuid4().hex
 
-        if self.agent_name == "terminus":
-            trial_config = TrialConfig(
-                task=LocalTaskConfig(id=LocalTaskId(path=f"{self.sandboxes_dir}/examples/tasks/hello-world")),
-                trials_dir=Path(self.trials_dir),
-                agent=AgentConfig(
-                    name=AgentName.TERMINUS_2.value,
-                    model_name=f"{self.model_name}",
-                    kwargs={
-                        "api_base": f"{self.base_url}/v1",
-                        "key": "fake_key",
-                        "session_id": session_id,
-                        "max_episodes": self.max_episodes,
-                    },
-                ),
+        agent_kwargs = {
+            "api_base": f"{self.base_url}/v1",
+            "key": "fake_key",
+            "session_id": session_id,
+            "max_episodes": self.max_episodes,
+        }
+
+        if self.agent_name == "terminus-2":
+            agent_config = AgentConfig(
+                name=AgentName.TERMINUS_2.value,
+                model_name=f"{self.model_name}",
+                kwargs=agent_kwargs,
             )
         elif self.agent_name == "oracle":
-            trial_config = TrialConfig(
-                task=LocalTaskConfig(id=LocalTaskId(path=f"{self.sandboxes_dir}/examples/tasks/hello-world")),
-                trials_dir=Path(self.trials_dir),
-                agent=AgentConfig(
-                    name=AgentName.ORACLE,
-                    model_name=self.model_name,
-                ),
+            agent_config = AgentConfig(
+                name=AgentName.ORACLE,
+                model_name=self.model_name,
             )
         else:
             raise ValueError(f"Invalid agent name: {self.agent_name}")
+
+        trial_config = TrialConfig(
+            task=TaskConfig(path=task_path),
+            trials_dir=Path(self.trials_dir),
+            agent=agent_config,
+            environment=EnvironmentConfig(type=self.environment_type),
+        )
 
         trial = Trial(trial_config)
         # Run the trial
