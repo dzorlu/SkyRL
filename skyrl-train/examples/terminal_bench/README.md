@@ -1,10 +1,10 @@
-### Terminal-Bench integration (WIP)
+### Terminal-Bench integration
 
-Integration with Terminal-Bench is a work in progress. For now, training tasks are hard-coded as "hello-world" in the prototype. The next TODO is to support specifying a training set of Terminal-Bench tasks.
+This example demonstrates how to use the `sandboxes` framework (the successor to Terminal-Bench) to generate training data for `SkyRL`. It supports running against the full suite of `terminal-bench` tasks.
 
-This integration requires the `sandboxes` repo (ie, the new and improved terminal bench):
+This integration requires the `sandboxes` repo:
 ```bash
-cd SkyRL/skyrl-train
+# From the SkyRL/skyrl-train directory
 git clone https://github.com/laude-institute/sandboxes.git
 ```
 
@@ -12,13 +12,42 @@ There is an existing package conflict between `skyrl-train` and `sandboxes`. Res
 * `rich==13.7.1`
 * `requires-python = ">=3.12"`
 
-- **Training**: run the GRPO training pipeline. Requires a dummy gsm8k dataset (for now).
+### Training Workflow
+
+**1. Convert the Terminal-Bench Tasks**
+
+First, use the provided script to convert the original `terminal-bench` tasks to the new `sandboxes` format. Run this from the `sandboxes` repository root.
+
 ```bash
+# Make sure you are in the 'sandboxes' directory
+uv run python scripts/convert_tbench_tasks.py \
+  --input-dir /path/to/your/terminal-bench/tasks \
+  --output-dir ./converted_tasks
+```
+
+**2. Configure the Training Run**
+
+Modify `skyrl-train/examples/terminal_bench/terminal_bench_config/terminal_bench.yaml` to point to your converted dataset.
+
+```yaml
+# ... existing config ...
+tasks_dataset_path: "/path/to/your/sandboxes/converted_tasks"
+environment_type: "docker" # "docker", "e2b", "modal", "daytona"
+```
+
+**3. Run the Training Pipeline**
+
+The training pipeline requires a dummy dataset to kick off the process (this will be improved in the future).
+
+```bash
+# First, create the dummy dataset
 uv run -- python examples/gsm8k/gsm8k_dataset.py
+
+# Then, run the training script
 bash examples/terminal_bench/run_tbench.sh
 ```
 
-- **Generation only**: launch the generator/serving process. This entrypoint is primarily for rapid debugging to avoid the trainer setup overhead.
+- **Generation only**: To launch the generator/serving process for rapid debugging without the trainer setup, you can run:
 ```bash
 bash examples/terminal_bench/run_tbench_gen.sh
 ```

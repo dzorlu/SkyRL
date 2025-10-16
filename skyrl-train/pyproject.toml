@@ -101,6 +101,7 @@ docs = [
 ]
 # TODO(tgriggs): Add `sandboxes` here once available as a package.
 sandboxes = [
+    "sandboxes @ git+https://github.com/dzorlu/sandboxes@feat/tbench-task-converter",
     "litellm[proxy]>=1.67.5",
 ]
 vllm = [
