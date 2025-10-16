@@ -9,11 +9,11 @@ from skyrl_train.inference_engines.base import ConversationType
 from omegaconf import DictConfig
 from pathlib import Path
 import random
-from sandbox.models.trial.config import TrialConfig, AgentConfig, TaskConfig, EnvironmentConfig
-from sandbox.models.task.id import LocalTaskId
-from sandbox.models.agent.name import AgentName
-from sandbox.models.environment_type import EnvironmentType
-from sandbox.trial.trial import Trial
+from sandboxes.models.trial.config import TrialConfig, AgentConfig, TaskConfig, EnvironmentConfig
+from sandboxes.models.task.id import LocalTaskId
+from sandboxes.models.agent.name import AgentName
+from sandboxes.models.environment_type import EnvironmentType
+from sandboxes.trial.trial import Trial
 
 
 @dataclass
