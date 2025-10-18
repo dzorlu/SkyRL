@@ -126,11 +126,21 @@ class TerminalBenchGenerator(GeneratorInterface):
         else:
             raise ValueError(f"Invalid agent name: {self.agent_name}")
 
+        print(f"{self.trials_dir=}")
         trial_config = TrialConfig(
             task=TaskConfig(path=task_path),
             trials_dir=Path(self.trials_dir),
             agent=agent_config,
             environment=EnvironmentConfig(type=self.environment_type),
+        )
+        # Debug: list environment dir before creating Trial
+        env_dir = task_path / "environment"
+        try:
+            env_contents = [str(p) for p in env_dir.rglob("*")]
+        except Exception as e:
+            env_contents = [f"<error listing {env_dir}: {e}>"]
+        print(
+            f"[debug] task_path={task_path} env_dir={env_dir} exists={env_dir.exists()} contents={env_contents}"
         )
 
         trial = Trial(trial_config)
