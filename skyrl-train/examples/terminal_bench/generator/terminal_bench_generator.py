@@ -78,7 +78,7 @@ class TerminalBenchGenerator(GeneratorInterface):
             parent_dir = Path(task_path)
             parent_contents = [str(p) for p in parent_dir.rglob("*")]
             print(f"[debug] parent_dir={parent_dir} contents={parent_contents}")
-            
+
             if env_dockerfile.exists() and instructfile.exists():
                 task_paths.append(task_path)
             else:
@@ -87,8 +87,8 @@ class TerminalBenchGenerator(GeneratorInterface):
                 )
 
 
-
         #for task_path in task_paths:
+        print("processing task", task_paths[0])
         tasks.append(
             self.terminal_bench_agent_loop(
                 task_path=task_paths[0],
