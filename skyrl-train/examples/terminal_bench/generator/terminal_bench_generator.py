@@ -85,12 +85,12 @@ class TerminalBenchGenerator(GeneratorInterface):
                 print(f"[debug] parent_dir={parent_dir} contents={parent_contents}")
 
 
-        for task_path in task_paths:
-            tasks.append(
-                self.terminal_bench_agent_loop(
-                    task_path=task_path,
-                )
+        #for task_path in task_paths:
+        tasks.append(
+            self.terminal_bench_agent_loop(
+                task_path=task_paths[0],
             )
+        )
 
         all_outputs = await asyncio.gather(*tasks)
 
@@ -142,14 +142,13 @@ class TerminalBenchGenerator(GeneratorInterface):
         else:
             raise ValueError(f"Invalid agent name: {self.agent_name}")
 
-        print(f"{self.trials_dir=}")
         trial_config = TrialConfig(
             task=TaskConfig(path=task_path),
             trials_dir=Path(self.trials_dir),
             agent=agent_config,
             environment=EnvironmentConfig(type=self.environment_type),
         )
-
+        print(f"{trial_config=}")
         trial = Trial(trial_config)
         # Run the trial
         while True:
