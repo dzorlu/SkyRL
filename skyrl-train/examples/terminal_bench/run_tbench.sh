@@ -21,7 +21,7 @@ uv run --isolated --extra vllm --extra sandboxes --with "sandbox@./sandboxes" -m
   terminal_bench_config.max_episodes=16 \
   terminal_bench_config.sandboxes_dir=$SANDBOXES_DIR \
   trainer.algorithm.advantage_estimator="grpo" \
-  trainer.policy.model.path="Qwen/Qwen2.5-1.5B-Instruct" \
+  trainer.policy.model.path="openai/ricdomolm/mini-coder-1.7b" \
   trainer.placement.colocate_all=true \
   trainer.strategy=fsdp2 \
   trainer.placement.policy_num_gpus_per_node=$NUM_GPUS \

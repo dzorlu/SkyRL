@@ -67,9 +67,20 @@ class TerminalBenchGenerator(GeneratorInterface):
     async def generate(self, input_batch: GeneratorInput) -> GeneratorOutput:
         prompts = input_batch["prompts"]
         tasks = []
+        task_paths = []
         for _ in range(len(prompts)):
             # Randomly sample a task for this batch item
             task_path = random.choice(self.all_task_paths)
+            env_dockerfile = Path(task_path) / "environment" / "Dockerfile"
+            if env_dockerfile.exists():
+                task_paths.append(task_path)
+            else:
+                print(
+                    f"[warning] Skipping task '{Path(task_path).name}': missing {env_dockerfile}"
+                )
+
+
+        for task_path in task_paths:
             tasks.append(
                 self.terminal_bench_agent_loop(
                     task_path=task_path,
