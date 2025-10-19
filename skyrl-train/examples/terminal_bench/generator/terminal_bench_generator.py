@@ -73,16 +73,19 @@ class TerminalBenchGenerator(GeneratorInterface):
             task_path = random.choice(self.all_task_paths)
             env_dockerfile = Path(task_path) / "environment" / "Dockerfile"
             instructfile = Path(task_path) / "instruction.md"
+        
+            # Debug: list the parent folder recursively
+            parent_dir = Path(task_path)
+            parent_contents = [str(p) for p in parent_dir.rglob("*")]
+            print(f"[debug] parent_dir={parent_dir} contents={parent_contents}")
+            
             if env_dockerfile.exists() and instructfile.exists():
                 task_paths.append(task_path)
             else:
                 print(
                     f"[warning] Skipping task '{Path(task_path).name}': missing {env_dockerfile} or {instructfile}"
                 )
-                # Debug: list the parent folder recursively
-                parent_dir = Path(task_path)
-                parent_contents = [str(p) for p in parent_dir.rglob("*")]
-                print(f"[debug] parent_dir={parent_dir} contents={parent_contents}")
+
 
 
         #for task_path in task_paths:
