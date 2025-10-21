@@ -155,9 +155,24 @@ class TerminalBenchGenerator(GeneratorInterface):
         trial = Trial(trial_config)
         # Run the trial
         while True:
-            results = await trial.run()
-            reward = results.verifier_result.rewards
-            chat_history = results.agent_result.all_messages
+            try:
+                results = await trial.run()
+            except Exception as e:
+                print(f"[error] Trial failed for task {task_path}: {e}")
+                # Return an empty but valid output; training can continue
+                return TerminalBenchAgentOutput(
+                    response_ids=[],
+                    reward=0.0,
+                    stop_reason="error_env_build",
+                    loss_mask=[],
+                    prompt_ids=[],
+                    rollout_logprobs=None,
+                )
+
+            verifier = getattr(results, "verifier_result", None)
+            reward = getattr(verifier, "rewards", 0.0)
+            agent_result = getattr(results, "agent_result", None)
+            chat_history = getattr(agent_result, "all_messages", []) or []
             if len(chat_history) > 0:
                 break
             else:
