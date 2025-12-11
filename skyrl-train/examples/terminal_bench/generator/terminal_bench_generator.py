@@ -120,10 +120,11 @@ class TerminalBenchGenerator(GeneratorInterface):
         else:
             raise ValueError(f"Invalid agent name: {self.agent_name}")
 
-        trial = Trial(trial_config)
+        
         # Run the trial
         while True:
             try:
+                trial = Trial(trial_config)
                 results = await trial.run()
                 print(f"Results: {results}")
                 if not results.verifier_result:

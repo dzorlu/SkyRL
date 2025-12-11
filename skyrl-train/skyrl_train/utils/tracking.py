@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Union
 from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 import pprint
+import os
 
 
 # TODO(tgriggs): Test all backends.
@@ -41,7 +42,18 @@ class Tracking:
             import wandb
             from omegaconf import OmegaConf
 
-            wandb.init(project=project_name, name=experiment_name, config=OmegaConf.to_container(config, resolve=True))
+            wandb_mode = os.environ.get("WANDB_MODE", "").lower()
+            
+
+            wandb.init(
+                project=project_name,
+                name=experiment_name, 
+                config=OmegaConf.to_container(config, resolve=True),
+                settings=wandb.Settings(
+                    mode=settings_mode,  # offline for airgapped runs; shared for multi-node metrics aggregation
+                )
+            )
+            
             self.logger["wandb"] = wandb
 
         if "mlflow" in backends:
