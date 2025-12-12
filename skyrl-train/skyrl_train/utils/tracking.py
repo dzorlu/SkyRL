@@ -40,17 +40,17 @@ class Tracking:
 
         if "wandb" in backends:
             import wandb
+            import os
             from omegaconf import OmegaConf
 
-            wandb_mode = os.environ.get("WANDB_MODE", "").lower()
+            wandb_mode = os.environ.get("WANDB_MODE", "online").lower()
             
-
             wandb.init(
                 project=project_name,
                 name=experiment_name, 
                 config=OmegaConf.to_container(config, resolve=True),
                 settings=wandb.Settings(
-                    mode=settings_mode,  # offline for airgapped runs; shared for multi-node metrics aggregation
+                    mode=wandb_mode,  # offline for airgapped runs; shared for multi-node metrics aggregation
                 )
             )
             
