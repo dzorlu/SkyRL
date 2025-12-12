@@ -130,7 +130,10 @@ class TerminalBenchGenerator(GeneratorInterface):
                 if not results.verifier_result:
                     print(f"[WARNING] Exception info: {results.exception_info}")
                     continue
-                reward = results.verifier_result.reward
+                # Harbor VerifierResult exposes `rewards` (a dict), not a scalar `reward`.
+                # TerminalBench expects a single scalar reward under the "reward" key.
+                rewards_dict = results.verifier_result.rewards or {}
+                reward = float(rewards_dict.get("reward", 0.0))
                 chat_history = results.agent_result.all_messages
                 if len(chat_history) > 0:
                     break
