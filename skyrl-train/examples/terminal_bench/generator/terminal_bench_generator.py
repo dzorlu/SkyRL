@@ -104,6 +104,8 @@ class TerminalBenchGenerator(GeneratorInterface):
                         "key": "fake_key",
                         "session_id": session_id,
                         "max_episodes": self.max_episodes,
+                        # Opt-in: include full chat history in TrialResult metadata for downstream processing
+                        "store_all_messages": True,
                     },
                 ),
             )
