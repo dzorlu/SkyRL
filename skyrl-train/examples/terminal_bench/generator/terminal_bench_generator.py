@@ -136,7 +136,7 @@ class TerminalBenchGenerator(GeneratorInterface):
                 # TerminalBench expects a single scalar reward under the "reward" key.
                 rewards_dict = results.verifier_result.rewards or {}
                 reward = float(rewards_dict.get("reward", 0.0))
-                chat_history = results.agent_result.all_messages
+                chat_history = results.agent_result.metadata.get("all_messages", [])
                 if len(chat_history) > 0:
                     break
                 else:
