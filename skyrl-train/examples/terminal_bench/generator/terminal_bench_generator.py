@@ -67,6 +67,11 @@ class TerminalBenchGenerator(GeneratorInterface):
         responses = [output.response_ids for output in all_outputs]
         rewards = [output.reward for output in all_outputs]
         rollout_metrics = get_rollout_metrics(responses, rewards)
+        print(f"Rollout metrics: {rollout_metrics}")
+
+        rollout_logprobs = [output.rollout_logprobs for output in all_outputs]
+        if any(lp is None for lp in rollout_logprobs):
+            rollout_logprobs = None
 
         generator_output: GeneratorOutput = {
             "prompt_token_ids": [output.prompt_ids for output in all_outputs],
@@ -75,8 +80,9 @@ class TerminalBenchGenerator(GeneratorInterface):
             "loss_masks": [output.loss_mask for output in all_outputs],
             "stop_reasons": [output.stop_reason for output in all_outputs],
             "rollout_metrics": rollout_metrics,
-            "rollout_logprobs": [output.rollout_logprobs for output in all_outputs],
+            "rollout_logprobs": rollout_logprobs,
         }
+        
 
         return generator_output
 
@@ -128,8 +134,7 @@ class TerminalBenchGenerator(GeneratorInterface):
             try:
                 trial = Trial(trial_config)
                 results = await trial.run()
-                print(f"Results: {results}")
-                if not results.verifier_result:
+                if results.exception_info:
                     print(f"[WARNING] Exception info: {results.exception_info}")
                     continue
                 # Harbor VerifierResult exposes `rewards` (a dict), not a scalar `reward`.
@@ -137,10 +142,13 @@ class TerminalBenchGenerator(GeneratorInterface):
                 rewards_dict = results.verifier_result.rewards or {}
                 reward = float(rewards_dict.get("reward", 0.0))
                 chat_history = results.agent_result.metadata.get("all_messages", [])
-                if len(chat_history) > 0:
+                # need at least two (prompt + response) messages
+                if len(chat_history) > 1:
                     break
                 else:
-                    print(f"[WARNING] Agent {self.agent_name} did not return a response")
+                    print(f"[WARNING] Agent {self.agent_name} did not return a response (history len: {len(chat_history)})")
+                    if results.agent_result:
+                        print(f"Metadata: {results.agent_result.metadata}")
             except Exception as e:
                 print(f"Error running trial: {e}")
                 continue
