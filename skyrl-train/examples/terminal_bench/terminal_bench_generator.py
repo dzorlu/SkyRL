@@ -165,7 +165,7 @@ class TerminalBenchGenerator(GeneratorInterface):
         else:
             raise ValueError(f"Invalid agent name: {self.agent_name}")
 
-        trial = Trial(trial_config)
+        
 
         # Run the trial to get `rewards`, `chat_history`, and `summarization_count`
         successful = False
@@ -173,6 +173,7 @@ class TerminalBenchGenerator(GeneratorInterface):
         chat_history = None
         summarization_count = None
         for i in range(MAX_NUM_RETRIES_PER_TRIAL):
+            trial = Trial(trial_config)
             prefix = f"Trajectory {trajectory_id} attempt {i+1}/{MAX_NUM_RETRIES_PER_TRIAL}"
             results = None
             try:
