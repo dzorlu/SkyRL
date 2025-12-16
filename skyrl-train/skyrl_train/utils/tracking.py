@@ -68,7 +68,6 @@ class Tracking:
         if "wandb" in backends:
             import wandb
             from omegaconf import OmegaConf
-            import os
 
             current_node_ip = "head"
             if ray.is_initialized():
@@ -77,9 +76,6 @@ class Tracking:
                 except Exception as e:
                     logger.warning(f"Failed to get node IP address, defaulting to 'head'. Error: {e}")
 
-            wandb_mode = os.environ.get("WANDB_MODE", "shared").lower()
-            print(f"{wandb_mode=}")
-
             run = wandb.init(
                 project=project_name,
                 name=experiment_name,
@@ -87,15 +83,14 @@ class Tracking:
                 group=experiment_name,
                 resume="allow",
                 settings=wandb.Settings(
-                    mode=wandb_mode,  # mainly for multi-node training's systems metrics aggregation
+                    mode="shared",  # mainly for multi-node training's systems metrics aggregation
                     x_primary=True,
                     x_label=f"node-{current_node_ip}"
                 )
             )
             run_id = run.id
             self.logger["wandb"] = run
-            if wandb_mode == "shared":
-                self._prepare_worker_nodes_systems_logging_wandb(project_name, experiment_name, run_id, config, current_node_ip)
+            self._prepare_worker_nodes_systems_logging_wandb(project_name, experiment_name, run_id, config, current_node_ip)
 
         if "mlflow" in backends:
             self.logger["mlflow"] = _MlflowLoggingAdapter(project_name, experiment_name, config)
