@@ -52,6 +52,7 @@ class TerminalBenchGenerator(GeneratorInterface):
         self.trials_dir = terminal_bench_cfg.trials_dir
         self.agent_name = terminal_bench_cfg.agent_name
         self.max_episodes = terminal_bench_cfg.max_episodes
+        self.enable_summarize = terminal_bench_cfg.get("enable_summarize", True)
 
         # Optional overrides for the environment
         self.override_memory_mb = terminal_bench_cfg.get("override_memory_mb")
@@ -59,6 +60,15 @@ class TerminalBenchGenerator(GeneratorInterface):
         self.override_cpus = terminal_bench_cfg.get("override_cpus")
 
         logger.info(f"TerminalBenchGenerator initialized with overrides: memory={self.override_memory_mb}, storage={self.override_storage_mb}, cpus={self.override_cpus}")
+
+        # Read custom chat template
+        custom_chat_template_path = generator_cfg.engine_init_kwargs.get("custom_chat_template_chat_completion_path", None)
+        if custom_chat_template_path:
+            with open(custom_chat_template_path, "r") as f:
+                self.custom_chat_template_content = f.read()
+            logger.info(f"TerminalBenchGenerator initialized with custom chat template read from: {custom_chat_template_path}")
+        else:
+            self.custom_chat_template_content = None
 
     async def generate(self, input_batch: GeneratorInput) -> GeneratorOutput:
         tasks = []
@@ -150,6 +160,7 @@ class TerminalBenchGenerator(GeneratorInterface):
                         "max_episodes": self.max_episodes,
                         "session_id": session_id,
                         "store_all_messages": True,
+                        "enable_summarize": self.enable_summarize,
                     },
                 ),
             )
@@ -186,12 +197,12 @@ class TerminalBenchGenerator(GeneratorInterface):
                 reward = results.verifier_result.rewards["reward"]
                 chat_history = results.agent_result.metadata['all_messages']
                 summarization_count = results.agent_result.metadata['summarization_count']
-                if len(chat_history) > 0:
+                if len(chat_history) > 1 and chat_history[0]["role"] == "user":
                     successful = True
                     logger.info(f"{prefix} successful: Results: {results.agent_result.metadata}")
                     break
                 else:
-                    logger.warning(f"{prefix} failed: Agent {self.agent_name} did not return a response. Results: {results}")
+                    logger.warning(f"{prefix} failed: Agent {self.agent_name} did not return a chat history with a user message. chat_history: {chat_history}\n\nResults: {results}")
             except Exception as e:
                 logger.warning(f"{prefix} failed: Error running trial: {e}. Results: {results}")
                 continue
@@ -215,6 +226,7 @@ class TerminalBenchGenerator(GeneratorInterface):
             prompt,
             add_generation_prompt=False,  # the message below will add it themselves
             tokenize=True,
+            chat_template=self.custom_chat_template_content,
         )
         initial_prompt_length = len(prompt_ids)
 
@@ -222,7 +234,7 @@ class TerminalBenchGenerator(GeneratorInterface):
         response_messages = chat_history[1:]
         assistant_logprobs = getattr(results.agent_result, "output_logprobs", None)
         response_ids, loss_mask, rollout_logprobs = get_response_ids_and_loss_mask_from_messages(
-            response_messages, self.tokenizer, assistant_logprobs
+            response_messages, self.tokenizer, assistant_logprobs, custom_chat_template=self.custom_chat_template_content
         )
 
         # Determine stop reason
