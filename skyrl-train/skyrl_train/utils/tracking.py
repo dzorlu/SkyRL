@@ -78,6 +78,7 @@ class Tracking:
                     logger.warning(f"Failed to get node IP address, defaulting to 'head'. Error: {e}")
 
             wandb_mode = os.environ.get("WANDB_MODE", "shared").lower()
+            print(f"{wandb_mode=}")
 
             run = wandb.init(
                 project=project_name,
@@ -93,7 +94,8 @@ class Tracking:
             )
             run_id = run.id
             self.logger["wandb"] = run
-            self._prepare_worker_nodes_systems_logging_wandb(project_name, experiment_name, run_id, config, current_node_ip)
+            if wandb_mode == "shared":
+                self._prepare_worker_nodes_systems_logging_wandb(project_name, experiment_name, run_id, config, current_node_ip)
 
         if "mlflow" in backends:
             self.logger["mlflow"] = _MlflowLoggingAdapter(project_name, experiment_name, config)

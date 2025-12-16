@@ -149,6 +149,7 @@ class TerminalBenchGenerator(GeneratorInterface):
                         "key": "fake_key",
                         "max_episodes": self.max_episodes,
                         "session_id": session_id,
+                        "store_all_messages": True,
                     },
                 ),
             )
